@@ -1,0 +1,13 @@
+version: '3.8'
+services:
+  node:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: node
+    entrypoint: sh -c 'yarn install --frozen-lockfile && yarn start:swc'
+    volumes:
+      - .:/app
+      - /app/node_modules
+    ports:
+      - ${PORT}:${PORT}
