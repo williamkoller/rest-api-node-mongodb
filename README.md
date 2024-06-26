@@ -8,7 +8,7 @@ Siga as etapas abaixo para configurar e executar o projeto em sua máquina local
 
 1. Clone este repositório em sua máquina:
   ```
-  git clone https://github.com/seu-usuario/rest-api-node-mongodb.git
+  git clone https://github.com/williamkoller/rest-api-node-mongodb.git
   ```
 
 2. Navegue até o diretório do projeto:
