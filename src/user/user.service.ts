@@ -1,26 +1,140 @@
-import { Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  Injectable,
+  Logger,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { InjectModel } from '@nestjs/mongoose';
+import { User } from './entities/user.entity';
+import { Model } from 'mongoose';
+import { genSaltSync, hashSync } from 'bcrypt';
 
 @Injectable()
 export class UserService {
-  create(createUserDto: CreateUserDto) {
-    return 'This action adds a new user';
+  private logger = new Logger(UserService.name);
+  private userConflictException = new ConflictException();
+  private userNotFoundException = new NotFoundException();
+  constructor(
+    @InjectModel(User.name) private readonly userModel: Model<User>,
+  ) {}
+  async create(createUserDto: CreateUserDto) {
+    try {
+      const userExists = await this.userModel.findOne({
+        email: { $eq: createUserDto.email },
+      });
+
+      if (userExists) {
+        throw this.userConflictException;
+      }
+
+      const userWithHash = {
+        ...createUserDto,
+        password: hashSync(createUserDto.password, genSaltSync()),
+      };
+
+      const userCreate = new this.userModel(userWithHash);
+
+      return await userCreate.save();
+    } catch (error) {
+      this.logger.error(error.message);
+
+      if (error instanceof ConflictException) {
+        throw this.userConflictException;
+      }
+
+      throw new BadRequestException(error.message);
+    }
   }
 
-  findAll() {
-    return `This action returns all user`;
+  async findAll() {
+    return await this.userModel.find({}, { __v: false });
   }
 
-  findOne(id: number) {
-    return `This action returns a #${id} user`;
+  async findOne(id: string) {
+    try {
+      const userFound = await this.userModel.findOne({ _id: { $eq: id } });
+
+      if (!userFound) {
+        throw this.userNotFoundException;
+      }
+
+      return userFound;
+    } catch (error) {
+      this.logger.error(error.message);
+
+      if (error instanceof NotFoundException) {
+        throw this.userNotFoundException;
+      }
+
+      throw new BadRequestException(error.message);
+    }
   }
 
-  update(id: number, updateUserDto: UpdateUserDto) {
-    return `This action updates a #${id} user`;
+  async update(id: string, updateUserDto: UpdateUserDto) {
+    try {
+      const userFound = await this.userModel.findOne({ _id: { $eq: id } });
+
+      if (!userFound) {
+        throw this.userNotFoundException;
+      }
+
+      if (updateUserDto.password) {
+        const userWithHash = {
+          password: hashSync(updateUserDto.password, genSaltSync()),
+        };
+
+        return await this.userModel.findOneAndUpdate(
+          {
+            _id: { $eq: id },
+          },
+          {
+            $set: { ...userWithHash },
+          },
+        );
+      }
+
+      return await this.userModel.findOneAndUpdate(
+        {
+          _id: { $eq: userFound?._id },
+        },
+        {
+          $set: {
+            ...updateUserDto,
+          },
+        },
+        { new: true },
+      );
+    } catch (error) {
+      this.logger.error(error.message);
+
+      if (error instanceof NotFoundException) {
+        throw this.userNotFoundException;
+      }
+
+      throw new BadRequestException(error.message);
+    }
   }
 
-  remove(id: number) {
-    return `This action removes a #${id} user`;
+  async remove(id: string) {
+    try {
+      const userFound = await this.userModel.findOne({ _id: { $eq: id } });
+
+      if (!userFound) {
+        throw this.userNotFoundException;
+      }
+
+      await this.userModel.deleteOne({ _id: { $eq: id } });
+    } catch (error) {
+      this.logger.error(error.message);
+
+      if (error instanceof NotFoundException) {
+        throw this.userNotFoundException;
+      }
+
+      throw new BadRequestException(error.message);
+    }
   }
 }
