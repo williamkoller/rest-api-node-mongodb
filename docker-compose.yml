@@ -11,3 +11,21 @@ services:
       - /app/node_modules
     ports:
       - ${PORT}:${PORT}
+    networks:
+      - node-net
+
+  mongo:
+    container_name: mongo
+    image: mongo:latest
+    ports:
+      - ${MONGODB_PORT}:${MONGODB_PORT}
+    volumes:
+      - mongodb-data/data
+    networks:
+      - node-net
+
+volumes:
+  mongodb-data:
+
+networks:
+  node-net:
