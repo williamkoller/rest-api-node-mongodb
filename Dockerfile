@@ -11,6 +11,6 @@ RUN yarn cache clean \
 
 COPY . .
 
-EXPOSE 3000
+EXPOSE 3007
 
 CMD ["yarn", "start:swc"]
