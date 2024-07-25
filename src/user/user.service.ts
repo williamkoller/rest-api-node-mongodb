@@ -11,6 +11,7 @@ import { InjectModel } from '@nestjs/mongoose';
 import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 import { genSaltSync, hashSync } from 'bcrypt';
+import { IdentifyUserByEmailDto } from './dto/identify-user-by-email.dto';
 
 @Injectable()
 export class UserService {
@@ -135,6 +136,30 @@ export class UserService {
       }
 
       throw new BadRequestException(error.message);
+    }
+  }
+
+  async findByEmail(identifyUserByEmailDto: IdentifyUserByEmailDto) {
+    try {
+      const user = await this.userModel.findOne({
+        email: { $eq: identifyUserByEmailDto?.email },
+      });
+
+      if (!user) {
+        throw this.userNotFoundException;
+      }
+
+      return user;
+    } catch (error) {
+      this.logger.error(error.message);
+
+      if (error instanceof NotFoundException) {
+        throw this.userNotFoundException;
+      }
+
+      throw new BadRequestException(
+        `UserService [findByEmail]: ${error.message}`,
+      );
     }
   }
 }
