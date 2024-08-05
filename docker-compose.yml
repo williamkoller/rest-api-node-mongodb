@@ -23,6 +23,14 @@ services:
       - mongodb-data/data
     networks:
       - node-net
+  
+  redis:
+    container_name: redis
+    image: redis:latest
+    ports:
+      - ${REDIS_PORT}:${REDIS_PORT}
+    networks:
+      - node-net
 
 volumes:
   mongodb-data:
