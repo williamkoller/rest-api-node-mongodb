@@ -13,11 +13,15 @@ import {
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserService } from './user.service';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { AuthGuard } from '../auth/guards/auth.guard';
+import { UserProcess } from './process/user.process';
 
 @Controller('user')
 export class UserController {
-  constructor(private readonly userService: UserService) {}
+  constructor(
+    private readonly userService: UserService,
+    private readonly userProcess: UserProcess,
+  ) {}
 
   @Post()
   @HttpCode(HttpStatus.CREATED)
@@ -38,16 +42,22 @@ export class UserController {
   }
 
   @Put(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.OK)
   async update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
     return await this.userService.update(id, updateUserDto);
   }
 
   @Delete(':id')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard)
   @HttpCode(HttpStatus.NO_CONTENT)
   async remove(@Param('id') id: string) {
     return await this.userService.remove(id);
+  }
+
+  @Post('process')
+  @HttpCode(HttpStatus.CREATED)
+  async process(@Body() createUserDto: CreateUserDto[]) {
+    return await this.userProcess.process(createUserDto);
   }
 }

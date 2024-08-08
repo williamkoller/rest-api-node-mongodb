@@ -12,6 +12,7 @@ import { User } from './entities/user.entity';
 import { Model } from 'mongoose';
 import { genSaltSync, hashSync } from 'bcrypt';
 import { IdentifyUserByEmailDto } from './dto/identify-user-by-email.dto';
+import { UserLog } from './entities/user-log.entity';
 
 @Injectable()
 export class UserService {
@@ -20,8 +21,9 @@ export class UserService {
   private userNotFoundException = new NotFoundException();
   constructor(
     @InjectModel(User.name) private readonly userModel: Model<User>,
+    @InjectModel(UserLog.name) private readonly userLogModel: Model<UserLog>,
   ) {}
-  async create(createUserDto: CreateUserDto) {
+  async create(createUserDto: CreateUserDto): Promise<User> {
     try {
       const userExists = await this.userModel.findOne({
         email: { $eq: createUserDto.email },
@@ -50,11 +52,15 @@ export class UserService {
     }
   }
 
-  async findAll() {
-    return await this.userModel.find({}, { __v: false });
+  async findAll(): Promise<{ total: number; data: User[] }> {
+    const users = await this.userModel.find({}, { __v: false });
+    return {
+      total: users.length,
+      data: users,
+    };
   }
 
-  async findOne(id: string) {
+  async findOne(id: string): Promise<User> {
     try {
       const userFound = await this.userModel.findOne({ _id: { $eq: id } });
 
@@ -74,7 +80,7 @@ export class UserService {
     }
   }
 
-  async update(id: string, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto): Promise<User> {
     try {
       const userFound = await this.userModel.findOne({ _id: { $eq: id } });
 
@@ -119,7 +125,7 @@ export class UserService {
     }
   }
 
-  async remove(id: string) {
+  async remove(id: string): Promise<void> {
     try {
       const userFound = await this.userModel.findOne({ _id: { $eq: id } });
 
@@ -139,7 +145,9 @@ export class UserService {
     }
   }
 
-  async findByEmail(identifyUserByEmailDto: IdentifyUserByEmailDto) {
+  async findByEmail(
+    identifyUserByEmailDto: IdentifyUserByEmailDto,
+  ): Promise<User> {
     try {
       const user = await this.userModel.findOne({
         email: { $eq: identifyUserByEmailDto?.email },
@@ -159,6 +167,21 @@ export class UserService {
 
       throw new BadRequestException(
         `UserService [findByEmail]: ${error.message}`,
+      );
+    }
+  }
+
+  async createUserLogs(
+    createUsersDto: CreateUserDto[],
+    action: string,
+  ): Promise<void> {
+    try {
+      await this.userLogModel.insertMany({ user: createUsersDto, action });
+    } catch (error) {
+      this.logger.error(error.message);
+
+      throw new BadRequestException(
+        `UserService [createUserLogs]: ${error.message}`,
       );
     }
   }

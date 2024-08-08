@@ -2,7 +2,7 @@ import { Controller, Post, Body, Get, Req, UseGuards } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { Request } from 'express';
-import { JwtAuthGuard } from './guards/jwt-auth.guard';
+import { AuthGuard } from './guards/auth.guard';
 import { UserService } from '../user/user.service';
 
 @Controller('auth')
@@ -18,8 +18,8 @@ export class AuthController {
   }
 
   @Get('profile')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(AuthGuard)
   async getProfile(@Req() req: Request) {
-    return await this.userService.findOne(req?.userId);
+    return await this.userService.findOne(req?.user?._id);
   }
 }

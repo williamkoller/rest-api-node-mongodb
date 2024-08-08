@@ -1,5 +1,9 @@
+interface User {
+  _id: string;
+}
+
 declare module Express {
   interface Request {
-    userId?: string;
+    user?: User;
   }
 }
